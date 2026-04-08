@@ -1,0 +1,13 @@
+# Core Requirements
+python-dotenv
+nltk
+
+# Module 5: Streamlit UI (Extra Credit)
+streamlit
+watchdog
+
+# Module 6: Testing (Extra Credit)
+pytest
+
+# Module 7: Evaluation
+numpy

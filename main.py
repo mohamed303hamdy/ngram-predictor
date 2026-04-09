@@ -1,6 +1,6 @@
 import os
 import argparse
-import logging
+import logging 
 import sys
 from dotenv import load_dotenv
 

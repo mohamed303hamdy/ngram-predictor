@@ -1,16 +1,19 @@
 import json
 import logging
 from collections import defaultdict, Counter
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 class NGramModel:
     """Building, storing, and exposing n-gram probability tables with backoff."""
-    
+
     def __init__(self, n_order: int = 4):
         self.n_order = n_order
         self.vocab = set()
-        self.model = {f"{i}gram": defaultdict(Counter) for i in range(1, n_order + 1)}
+        self.model = {f"{i}gram": defaultdict(
+            Counter) for i in range(1, n_order + 1)}
         self.probs = {f"{i}gram": {} for i in range(1, n_order + 1)}
 
     def build_vocab(self, token_file: str, unk_threshold: int):
@@ -19,20 +22,22 @@ class NGramModel:
         with open(token_file, 'r') as f:
             for line in f:
                 word_counts.update(line.split())
-        
-        self.vocab = {word for word, count in word_counts.items() if count >= unk_threshold}
+
+        self.vocab = {word for word, count in word_counts.items()
+                      if count >= unk_threshold}
         self.vocab.add("<UNK>")
         logger.info(f"Vocab built. Size: {len(self.vocab)}")
 
     def build_counts_and_probabilities(self, token_file: str):
         """Counts n-grams 1..N and computes MLE probabilities."""
         total_words = 0
-        
+
         with open(token_file, 'r') as f:
             for line in f:
-                tokens = [t if t in self.vocab else "<UNK>" for t in line.split()]
+                tokens = [
+                    t if t in self.vocab else "<UNK>" for t in line.split()]
                 total_words += len(tokens)
-                
+
                 for n in range(1, self.n_order + 1):
                     for i in range(len(tokens) - n + 1):
                         ngram = tokens[i:i+n]
@@ -53,19 +58,23 @@ class NGramModel:
         """Backoff lookup: highest order down to 1-gram."""
         for n in range(self.n_order, 0, -1):
             needed_len = n - 1
-            current_context = " ".join(context_list[-needed_len:]) if needed_len > 0 else ""
-            
+            current_context = " ".join(
+                context_list[-needed_len:]) if needed_len > 0 else ""
+
             if current_context in self.probs[f"{n}gram"]:
-                logger.debug(f"Match found at {n}gram for context: '{current_context}'")
+                logger.debug(
+                    f"Match found at {n}gram for context: '{current_context}'")
                 return self.probs[f"{n}gram"][current_context]
-        
+
         return {}
 
     def save_model(self, path: str):
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w') as f:
             json.dump(self.probs, f)
 
     def save_vocab(self, path: str):
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w') as f:
             json.dump(list(self.vocab), f)
 
